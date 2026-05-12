@@ -8,13 +8,13 @@ from math import sqrt, cos, sin, exp
 TAILLE = [0, 0]
 RESOLUTION = 0
 VITESSE_TYPIQUE = 1
-RADIUS = 0.4
+RADIUS = 0.5
 MASS = 80 #on suppose que la masse est cste en fn des indiv
-TAU = 1 # temps de relaxation indiv; pourra changer dans les modèles plus poussés
-F = 30
+TAU = 0.7 # temps de relaxation indiv; pourra changer dans les modèles plus poussés
+F = 40
 DELTA = 1
-LAMBDA = 1
-KAPPA = 1000 # : constantes du modèle de Helbing
+LAMBDA = 0.2
+KAPPA = 600 # : constantes du modèle de Helbing
 #à un moment faudra vérifier la pertinence de ces valeurs
 
 

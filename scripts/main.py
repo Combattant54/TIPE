@@ -9,11 +9,10 @@ import environnement
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-
 POS = [[1, 4], [1.1, 4.05], [1, 0.2], [1.5, 2.5], [5, 1]]
 #POS = [[1, 1.9], [1.5, 2], [1, 0.2]]
 systems = []
-dt = 0.02
+dt = 0.05
 
 inter_distance = []
 mean_inter_distance = []
@@ -24,17 +23,32 @@ pos_pers = [[[], []] for i in range(len(POS))]
 
 COLORS = ["red", "green", "blue", "purple", "orange"]
 
-SIMULATION_NUMBER = 7
+SIMULATION_NUMBER = 11
 PARAMS = {"NUMBER": SIMULATION_NUMBER}
-DISPLAY_SIZE = 40
+
+DPI = 100
 
 fig, axis = plt.subplots()
-axis.set_xlim(-1, environnement.TAILLE[0] + 1)
-axis.set_ylim(-1, environnement.TAILLE[1] + 1)
+
+#taille effective de la simulation de la forme ([X0, Y0], [X1, Y1])
+SIM_LIMITS = ([-1, -1], [environnement.TAILLE[0] + 1, environnement.TAILLE[1] + 1]) 
+axis.set_xlim(SIM_LIMITS[0][0], SIM_LIMITS[1][0])
+axis.set_ylim(SIM_LIMITS[0][1], SIM_LIMITS[1][1])
+
+
+fig.set_dpi(DPI)
+PIXEL_SIZE = fig.get_size_inches()*fig.dpi
+SIM_SIZE = (SIM_LIMITS[1][0] - SIM_LIMITS[0][0], SIM_LIMITS[1][1] - SIM_LIMITS[0][1])
+
+DISPLAY_SIZE = (environnement.RADIUS * 2 * PIXEL_SIZE[1] / SIM_SIZE[1])**2
 
 time = 0
 
 X, Y = zip(*POS)
+
+RECTS = []
+
+# DISPLAY_SIZE = (environnement.RADIUS * DPI)**2
 
 try:
     system = axis.scatter(X, Y, color=COLORS[:len(X)], s = [DISPLAY_SIZE]*len(X))
@@ -46,6 +60,7 @@ except Exception as e:
     raise e
 
 def init():
+    global RECTS
     print("Initializing simulation N°" + str(SIMULATION_NUMBER))
     print(f"initializing environnment with {len(POS)} personns")
     environnement.init(POS, [], [])
@@ -54,7 +69,12 @@ def init():
         PARAMS[k] = env_params[k]
     print(PARAMS)
     
-
+    RECTS = environnement.build_rect()
+    for rect in RECTS:
+        axis.add_patch(rect)
+        
+    print("Initialisation finalized")
+    
 def update(frame):
     global time
     if len(environnement.PERSONNES_ACTIVES) >= 1:
@@ -82,7 +102,7 @@ def update(frame):
     environnement.perform_time_step(dt)
     time = time + dt
     
-    return system, 
+    return RECTS
 
 def display():
     fig, (ax0, ax1) = plt.subplots(2)
@@ -102,9 +122,8 @@ def display():
     
 def main():
     pass
-    animation = FuncAnimation(fig=fig, func=update, frames=int(10/dt), interval = dt*1000, repeat = False, blit = True)
-    
-    animation.save(f"../results/ANIM_SIM_{SIMULATION_NUMBER}.gif")
+    animation = FuncAnimation(fig=fig, func=update, frames=int(12/dt), interval = dt*1000, repeat = False, blit = True)
+    animation.save(f"../results/ANIM_SIM_{SIMULATION_NUMBER}.gif", dpi=DPI)
     
     display()
 
