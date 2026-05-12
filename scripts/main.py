@@ -9,6 +9,8 @@ import environnement
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
+import numpy as np
+
 POS = [[1, 4], [1.1, 4.05], [1, 0.2], [1.5, 2.5], [5, 1]]
 #POS = [[1, 1.9], [1.5, 2], [1, 0.2]]
 systems = []
@@ -23,10 +25,10 @@ pos_pers = [[[], []] for i in range(len(POS))]
 
 COLORS = ["red", "green", "blue", "purple", "orange"]
 
-SIMULATION_NUMBER = 11
+SIMULATION_NUMBER = 15
 PARAMS = {"NUMBER": SIMULATION_NUMBER}
 
-DPI = 100
+DPI = 200
 
 fig, axis = plt.subplots()
 
@@ -41,12 +43,14 @@ PIXEL_SIZE = fig.get_size_inches()*fig.dpi
 SIM_SIZE = (SIM_LIMITS[1][0] - SIM_LIMITS[0][0], SIM_LIMITS[1][1] - SIM_LIMITS[0][1])
 
 DISPLAY_SIZE = (environnement.RADIUS * 2 * PIXEL_SIZE[1] / SIM_SIZE[1])**2
+DISPLAY_SIZE = (environnement.RADIUS * 40)**2
 
 time = 0
 
 X, Y = zip(*POS)
 
 RECTS = []
+PAS = 0.25
 
 # DISPLAY_SIZE = (environnement.RADIUS * DPI)**2
 
@@ -72,7 +76,28 @@ def init():
     RECTS = environnement.build_rect()
     for rect in RECTS:
         axis.add_patch(rect)
-        
+    
+    num_X = int(environnement.TAILLE[0]/PAS)    
+    num_y = int(environnement.TAILLE[1]/PAS)
+    
+    X = []
+    Y = []
+    V_X = []
+    V_Y = []
+    for x in range(num_X):
+        for y in range(num_y):
+            X.append(x*PAS)
+            Y.append(y*PAS)
+            
+            v = environnement.vitesse_souhaitee((x*PAS, y*PAS))
+
+            V_X.append(v[0]*0.5)
+            V_Y.append(v[1]*0.5)
+    
+    axis.quiver(X, Y, V_X, V_Y)
+    
+    print("should show smt")
+    plt.show()
     print("Initialisation finalized")
     
 def update(frame):

@@ -35,5 +35,7 @@ class Circle():
     
     def future_position(self, dt):
         return [self.position[0] + self.speed[0] * dt, self.position[1] + self.speed[1] * dt]
-
-
+    
+    @classmethod
+    def compute_collision(circle1, circle2):
+        pass

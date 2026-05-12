@@ -27,7 +27,7 @@ import personnes
 from matplotlib.patches import Rectangle, Circle
 from collections import deque
 
-OBSTACLES_RECT = [[[6, 1], [6.8, 7]]]
+OBSTACLES_RECT = [[[6, -1], [7, 5]], [[6, 6],[7, 11]]]
 OBSTACLES_ROND = []
 # commencons sans obstacles
 
@@ -51,13 +51,13 @@ CHAMP_VITESSES = []
 
 # vitesse typique d'une personne dans une foule
 VITESSE_TYPIQUE = 1.3
-RADIUS = personnes.RADIUS
-MARGIN = personnes.RADIUS
+RADIUS = personnes.RADIUS*1.3
+MARGIN = personnes.RADIUS*1.3
 
 def build_rect(obstacle_color="black", objectif_color="green"):
     rects = []
     for bg, hd in OBSTACLES_RECT:
-        r = Rectangle(bg, hd[0] - bg[0], hd[1] - bg[1], color=obstacle_color, fill=True)
+        r = Rectangle(bg, hd[0] - bg[0], hd[1] - bg[1], color=obstacle_color, fill=True, alpha=0.3)
         rects.append(r)
     
     for bg, hd in OBJECTIFS:
@@ -111,7 +111,7 @@ def construire_champ_vitesse():
     for x_int in range(TAILLE_INT[0]):
         for y_int in range(TAILLE_INT[0]):
             c = coord_en_relle((x_int, y_int))
-            if is_obstacle(c):
+            if is_obstacle(c, margin=True):
                 obstacles_set.add((x_int, y_int))
             elif objectif_atteint(c):
                 objectif_set.add((x_int, y_int))
@@ -123,34 +123,6 @@ def construire_champ_vitesse():
     while len(file) > 0:
         el = file.popleft()
         
-        for obj in CADRE:
-            cel = (el[0] + obj[0], el[1] + obj[1])
-            d = done_dict[el] + sqrt(obj[0]**2 + obj[1] ** 2)
-            
-            if cel in done_dict and done_dict[cel] <= d:
-                continue
-            
-            done_dict[cel] = d
-            
-            if 0 <= cel[0] < TAILLE_INT[0] and 0 <= cel[1] < TAILLE_INT[1]:
-                v = [-obj[0], -obj[1]]
-                scale = VITESSE_TYPIQUE * sqrt(v[0]**2 + v[1]**2)
-                v[0] = v[0] * scale
-                v[1] = v[1] * scale
-            
-                champ[cel[0]][cel[1]] = v
-                if not is_obstacle(coord_en_relle(cel)):
-                    file.append(cel)
-
-    print("[CHAMP VITESSE]:début vitesse dans les obstacles")
-    done_dict.clear()
-    for obs in obstacles_set:
-        if obs in done_dict:
-            file.append(obs)
-            done_dict[obs] = 0
-    
-    while len(file) > 0:
-        el = file.popleft()
         
         for obj in CADRE:
             cel = (el[0] + obj[0], el[1] + obj[1])
@@ -160,8 +132,42 @@ def construire_champ_vitesse():
                 continue
             
             done_dict[cel] = d
+
             
-            if 0 <= cel[0] < TAILLE_INT[0] and 0 <= cel[1] < TAILLE_INT[1] and is_obstacle(cel):
+            if 0 <= cel[0] < TAILLE_INT[0] and 0 <= cel[1] < TAILLE_INT[1]:
+                v = [-obj[0], -obj[1]]
+                scale = VITESSE_TYPIQUE * sqrt(v[0]**2 + v[1]**2)
+                v[0] = v[0] * scale
+                v[1] = v[1] * scale
+                
+                champ[cel[0]][cel[1]] = v
+                if not is_obstacle(coord_en_relle(cel)):
+                    file.append(cel)
+
+    print("[CHAMP VITESSE]:début vitesse dans les obstacles")
+    obs_done_dict = {}
+    for obs in obstacles_set:
+        if obs in done_dict:
+            file.append(obs)
+            obs_done_dict[obs] = 0
+    
+    done_dict.clear()
+    
+    print("Number obstacles: ", len(obs_done_dict), "el a check", len(file))
+    
+    while len(file) > 0:
+        el = file.popleft()
+        
+        for obj in CADRE:
+            cel = (el[0] + obj[0], el[1] + obj[1])
+            d = obs_done_dict[el] + sqrt(obj[0]**2 + obj[1] ** 2)
+            
+            if cel in obs_done_dict and obs_done_dict[cel] <= d:
+                continue
+            
+            obs_done_dict[cel] = d
+            
+            if 0 <= cel[0] < TAILLE_INT[0] and 0 <= cel[1] < TAILLE_INT[1] and is_obstacle(coord_en_relle(cel)):
                 v = [-obj[0], -obj[1]]
                 scale = VITESSE_TYPIQUE * sqrt(v[0]**2 + v[1]**2)
                 v[0] = v[0] * scale
@@ -169,6 +175,7 @@ def construire_champ_vitesse():
             
                 champ[cel[0]][cel[1]] = v
                 file.append(cel)
+    
     
     print("[CHAMP VITESSE]:champ terminé")
     return champ
@@ -192,15 +199,17 @@ def objectif_atteint(position):
     
     return position[0] > TAILLE[0]
 
-def is_obstacle(position):
+def is_obstacle(position, margin = True):
+    
     x, y = position[0], position[1]
+    
     for obstacle_rond in OBSTACLES_ROND:
         pos_obs, rayon = obstacle_rond[0], obstacle_rond[1]
-        if (x - pos_obs[0]) ** 2 + (y - pos_obs[1]) ** 2 < (rayon + MARGIN) ** 2:
+        if (x - pos_obs[0]) ** 2 + (y - pos_obs[1]) ** 2 < (rayon + MARGIN*margin) ** 2:
             return True
     
     for rect_bg, rect_hd in OBSTACLES_RECT:
-        if rect_bg[0] <= x+MARGIN and x-MARGIN <= rect_hd[0] and rect_bg[1] <= y+MARGIN and y-MARGIN <= rect_hd[1]:
+        if rect_bg[0] <= x+MARGIN*margin and x-MARGIN*margin <= rect_hd[0] and rect_bg[1] <= y+MARGIN*margin and y-MARGIN*margin <= rect_hd[1]:
             return True
     
     return False
@@ -250,6 +259,9 @@ def gather_parameters():
 
 def pos_pers(i):
     return FOULE[1][i]
+
+def vitesse_souhaitee(pos):
+    return personnes.calcul_vitesse_souhaitee(pos, CHAMP_VITESSES)
 
 def init(pos, obs_rect, obs_rond):
     global FOULE
