@@ -80,23 +80,26 @@ def force_contact_obstacle (i,OBSTACLE,foule):
     #         DIST = d0, ind = i
     #     i+=1
     # di = distance_point_rectangle(foule[0][i][0],[foule[0][i][1]],OBSTACLE[ind][0][0],OBSTACLE[ind][1][0],OBSTACLE[ind][0][1],OBSTACLE[ind][1][1]) #besoin des coordonnées de l'obstacle le plus proche
-    d0 = distance_point_rectangle(px, py, OBSTACLE[0][0][0], OBSTACLE[0][0][1], OBSTACLE[0][1][0], OBSTACLE[0][1][1]), ind = 0
-    for j in range (len(L)):
+    d0 = distance_point_rectangle(px, py, OBSTACLE[0][0][0], OBSTACLE[0][0][1], OBSTACLE[0][1][0], OBSTACLE[0][1][1])
+    ind = 0
+    for j in range (len(OBSTACLE)):
         if distance_point_rectangle(px, py, OBSTACLE[j][0][0], OBSTACLE[j][0][1], OBSTACLE[j][1][0], OBSTACLE[j][1][1])<d0:
             ind = j
             d0 = distance_point_rectangle(px, py, OBSTACLE[j][0][0], OBSTACLE[j][0][1], OBSTACLE[j][1][0], OBSTACLE[j][1][1])
     if d0>0:
         return 0
     else:
-        e_i = vect_unit(i,foule,barycentre)
-        return [math.exp(-1000*d0)*e_i[0],math.exp(-1000*d0)*e_i[1]]
+        if foule[1][i][1]>=OBSTACLE[ind][1][0]:
+            return [0,exp(-1000*d0)]
+        else: 
+            return [-1*exp(-1000*d0),0]
 
 def barycentre(rectangle):
     return [rectangle[0][0]+rectangle[0][1],rectangle[1][0]+rectangle[1][1]]
 
-def vect_normal(rectangle): #normal dirigé vers la gauche du rectangle
-    pt_supgauche = [rectangle[0][0],rectangle[1][1]]
-    
+def vect_normal_rect(rectangle): #normal dirigé vers la gauche du rectangle 
+#ne marche que dans le cas d'un rectangle non incliné
+    return [-1,0]
     
     
     # la distance
@@ -179,14 +182,15 @@ def force_contact_j_vers_i (i,j,foule):
     e_ij = vect_unit(i,j,foule)
     return [KAPPA*di*e_ij[0], KAPPA*di*e_ij[1]]
 
-def calcul_force_tot(i,foule,personne_active):
+def calcul_force_tot(i,foule,personne_active,OBSTACLE):
     f_tot = [0,0]
     for j in range(len(foule[0])):
         if j!=i and j in personne_active:
             fsoc = f_sociale_j_vers_i(i,j,foule)
             fcont = force_contact_j_vers_i (i,j,foule)
-            f_tot[0] += fsoc[0] + fcont[0]
-            f_tot[1] += fsoc[1] + fcont[1]
+            f_obs = force_contact_obstacle(i, OBSTACLE, foule)
+            f_tot[0] += fsoc[0] + fcont[0]+f_obs[0]
+            f_tot[1] += fsoc[1] + fcont[1]+f_obs[1]
     return f_tot
 
 def vitesse_update(foule, dt, personnes_actives, champs_vitesses): #pfd en légende
