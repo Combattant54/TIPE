@@ -8,13 +8,13 @@ from math import sqrt, cos, sin, exp
 TAILLE = [0, 0]
 RESOLUTION = 0
 VITESSE_TYPIQUE = 1
-RADIUS = 0.4
+RADIUS = 0.2
 MASS = 80 #on suppose que la masse est cste en fn des indiv
-TAU = 1 # temps de relaxation indiv; pourra changer dans les modèles plus poussés
-F = 30
-DELTA = 1
-LAMBDA = 1
-KAPPA = 1000 # : constantes du modèle de Helbing
+TAU = 0.7 # temps de relaxation indiv; pourra changer dans les modèles plus poussés
+F = 150
+DELTA = 0.33
+LAMBDA = 0.2
+KAPPA = 400 # : constantes du modèle de Helbing
 #à un moment faudra vérifier la pertinence de ces valeurs
 
 
@@ -78,7 +78,9 @@ def force_contact_j_vers_i (i,j,foule):
     #la force ne s'applique que quand les gens se rentrent dedans
     
     e_ij = vect_unit(i,j,foule)
-    return [KAPPA*di*e_ij[0], KAPPA*di*e_ij[1]]
+    
+    
+    return [-KAPPA*exp(di)*e_ij[0], -KAPPA*exp(di)*e_ij[1]]
 
 def calcul_force_tot(i,foule,personne_active):
     f_tot = [0,0]
