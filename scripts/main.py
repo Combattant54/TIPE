@@ -147,6 +147,7 @@ def display():
     
 def main():
     pass
+    print(int(12/dt))
     animation = FuncAnimation(fig=fig, func=update, frames=int(12/dt), interval = dt*1000, repeat = False, blit = True)
     animation.save(f"../results/ANIM_SIM_{SIMULATION_NUMBER}.gif", dpi=DPI)
     

@@ -1,0 +1,79 @@
+from math import sqrt, cos, exp
+
+class Personne():
+    def __init__(self, radius, center, speed=[0,0], tau=0.7, mass=80, stress=0, f_soc=150, delta=0.33, lamb=0.2, kappa=400):
+        self.radius = radius
+        self.center = center
+        self.speed = speed
+        self.tau = 0.7
+        self.mass = 80
+        self.stress = 0
+        self.f_soc = 0
+        self.delta = 0.33
+        self.lamb = 0.2
+        self.kappa = 00
+    
+    def distance (self, pers): #fonction dist min entre 2 individus
+        if pers is self:
+            raise ValueError("Distance with the only one personn not defined")
+        elif not isinstance(pers, Personne):
+            raise TypeError("Argument of unvalid type of '{}' received instead of expected 'Personne' type".format(str(type(pers))))
+        
+        
+        di = sqrt((self.center[0]-pers.center[0])**2+(self.center[1]-pers.center[1])**2)
+    
+        return (di - self.radius - pers.radius)
+    
+    def vect_unit(self, pers):
+        if not isinstance(pers, Personne):
+            raise TypeError("Argument of unvalid type of '{}' received instead of expected 'Personne' type".format(str(type(pers))))
+        di = sqrt((self.center[0]-pers.center[0])**2+(self.center[1]-pers.center[1])**2)
+        
+        e0 = (pers.center[0] - self.center[0])/di
+        e1 = (pers.center[1] - self.center[1])/di
+        
+        return [e0,e1]
+    
+    def f_sociale_de_pers(self, pers):
+        e_ij = self.vect_unit(pers)
+        d_ij = self.distance(pers)
+        
+        prod_scal = self.speed[0]*e_ij[0]+self.speed[1]*e_ij[1]
+        norme = sqrt(self.speed[0]**2 + self.speed[1]**2)
+        
+        if norme == 0:
+            cos_alpha = 0
+        else:
+            cos_alpha = prod_scal / norme
+        #on calcule le cos de l'angle entre la vitesse et e_ij (alpha)
+        
+        f = -1*self.f_soc*exp(-d_ij/self.delta)*(self.lamb +(1-self.lamb)*(1+cos_alpha)/2)
+        return [f*e_ij[0],f*e_ij[1]]
+    
+    
+    def force_contact_de_pers(self, pers):
+        di = self.distance(pers)
+        if di>=0:
+            return [0,0] 
+        #la force ne s'applique que quand les gens "rentrent dans les murs
+        
+        e_ij = self.vect_unit(pers)
+        
+        
+        return [-self.kappa*exp(di)*e_ij[0], -self.kappa*exp(di)*e_ij[1]]
+    
+    def vitesse_update(self, ftot, dt, vitesse_souhaitee): #pfd en légende
+        #on utilise les fonctions:
+            # -> vitesse souhaitée (on suppose qu'on l'a)
+            # -> vitesse (t) (en fait foule va etre update regulierement)
+            # -> si jamais ya besoin d'autres forces sociales
+        self.speed[0] += dt/self.tau * (vitesse_souhaitee[0] - self.speed[0]) + dt/self.mass * ftot[0]
+        self.speed[1] += dt/self.tau * (vitesse_souhaitee[1] - self.speed[1]) + dt/self.mass * ftot[1]
+    
+    def position_update(self, dt): #on fait la mm: la position à t+dt, c'est celle à t + v * dt
+        self.center[0] += dt*self.speed[0]
+        self.center[1] += dt*self.speed[1]
+    
+    def __repr__(self):
+        return "Personne({}, {}, {})".format(self.radius, self.center, self.speed)
+    
