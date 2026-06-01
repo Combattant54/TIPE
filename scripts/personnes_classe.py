@@ -5,13 +5,13 @@ class Personne():
         self.radius = radius
         self.center = center
         self.speed = speed
-        self.tau = 0.7
+        self.tau = 0.5
         self.mass = 80
         self.stress = 0
-        self.f_soc = 0
+        self.f_soc = 100
         self.delta = 0.33
         self.lamb = 0.2
-        self.kappa = 00
+        self.kappa = 400
     
     def distance (self, pers): #fonction dist min entre 2 individus
         if pers is self:
@@ -20,8 +20,8 @@ class Personne():
             raise TypeError("Argument of unvalid type of '{}' received instead of expected 'Personne' type".format(str(type(pers))))
         
         
-        di = sqrt((self.center[0]-pers.center[0])**2+(self.center[1]-pers.center[1])**2)
-    
+        di = sqrt( (self.center[0]-pers.center[0])**2 + (self.center[1]-pers.center[1])**2 )
+        
         return (di - self.radius - pers.radius)
     
     def vect_unit(self, pers):
@@ -59,16 +59,27 @@ class Personne():
         
         e_ij = self.vect_unit(pers)
         
+        f_con = [-self.kappa*exp(-di)*e_ij[0], -self.kappa*exp(-di)*e_ij[1]]
         
-        return [-self.kappa*exp(di)*e_ij[0], -self.kappa*exp(di)*e_ij[1]]
+        return f_con
     
     def vitesse_update(self, ftot, dt, vitesse_souhaitee): #pfd en légende
         #on utilise les fonctions:
             # -> vitesse souhaitée (on suppose qu'on l'a)
             # -> vitesse (t) (en fait foule va etre update regulierement)
             # -> si jamais ya besoin d'autres forces sociales
-        self.speed[0] += dt/self.tau * (vitesse_souhaitee[0] - self.speed[0]) + dt/self.mass * ftot[0]
-        self.speed[1] += dt/self.tau * (vitesse_souhaitee[1] - self.speed[1]) + dt/self.mass * ftot[1]
+        
+        a = [0, 0]
+        a[0] += (vitesse_souhaitee[0] - self.speed[0]) / self.tau
+        a[1] += (vitesse_souhaitee[1] - self.speed[1]) / self.tau
+        
+        a = [0, 0]
+        
+        a[0] += ftot[0] / self.mass
+        a[1] += ftot[1] / self.mass
+        
+        self.speed[0] += dt * a[0]
+        self.speed[1] += dt * a[1]
     
     def position_update(self, dt): #on fait la mm: la position à t+dt, c'est celle à t + v * dt
         self.center[0] += dt*self.speed[0]

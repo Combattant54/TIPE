@@ -20,9 +20,16 @@ class Simulation():
         self.taille_int = [int(self.taille[0] * self.resolution) + 1, int(self.taille[1] * self.resolution) + 1]
         self.foule: list[Personne] = []
         
+        
+        print(self.rect_obstacles)
+        print(self.objectifs)
         self.champ_vitesses = self.construire_champ_vitesse()
         
-        self.arriving_data = []
+        c = self.position_reelle_en_coordonees([6-0.3, 2])
+        print(self.champ_vitesses[c[0]][c[1]])
+        print(self.calcul_vitesse_souhaitee([6-0.3, 2]))
+        
+        self.ariving_data = []
         self.time = 0
     
     def init_foule(self, foule: list[Personne]):
@@ -159,7 +166,7 @@ class Simulation():
         
         return champ
     
-    def objectif_atteint(self, position):
+    def objectif_atteint(self, position, marge = False):
         """
 
         Parameters
@@ -171,12 +178,11 @@ class Simulation():
 
         """
         x, y = position
+        m = self.margin * marge
         for rect_bg, rect_hd in self.objectifs:
-            if rect_bg[0] <= x <= rect_hd[0] and rect_bg[1] <= y <= rect_hd[1]:
+            if rect_bg[0] - m <= x <= rect_hd[0] + m and rect_bg[1] - m <= y <= rect_hd[1] + m:
                 return True
         return False
-        
-        return position[0] > TAILLE[0]
     
     def is_obstacle(self, position, margin = True):
     
@@ -220,6 +226,17 @@ class Simulation():
                     f_soc = self.foule[i].f_sociale_de_pers(self.foule[j])
                     f_con = self.foule[i].force_contact_de_pers(self.foule[j])
                     
+                    if(f_con == [0, 0]):
+                        print("[00]")
+                    
+                    #f_con = [0, 0]
+                    f_soc = [0, 0]
+                    
+                    c_i = self.foule[i].center
+                    c_j = self.foule[j].center
+                    print(c_i, c_j, f_con)
+                    print(((c_j[0] - c_i[0])**2 + (c_j[1] - c_i[1])**2)**1/2)
+                    
                     f[0] = f[0] + f_soc[0] + f_con[0]
                     f[1] = f[1] + f_soc[1] + f_con[1]
             F[i] = f
@@ -236,11 +253,14 @@ class Simulation():
         
         desactivation = []
         for i in self.personnes_actives:
-            if self.objectif_atteint(self.foule[i].center):
+            if self.objectif_atteint(self.foule[i].center, marge = True):
                 desactivation.append(i)
         for i in desactivation:
+            
             self.personnes_actives.discard(i)
-            self.arriving_data.append((i, self.time, self.foule[i]))
+            self.ariving_data.append((i, self.time, self.foule[i]))
+            print(f"[DESACTIVATION]: personne {i} désactivée, il reste {len(self.personnes_actives)} p.actives")
+            print(f"[DESACTIVATION]: ariving data updated to {len(self.ariving_data)}")
     
     def calcul_vitesse_souhaitee(self, pos):
         """
@@ -310,16 +330,16 @@ class Simulation():
     
     def first_evacuation(self):
         assert(self.is_finished())
-        return self.arriving_data[0][1]
+        return self.ariving_data[0][1]
 
     def last_evacuation(self):
         assert(self.is_finished())
-        return self.arriving_data[-1][1]
+        return self.ariving_data[-1][1]
     
     def mean_evacuation(self):
         assert(self.is_finished())
         total_time = 0
-        for i, t in self.arriving_data:
+        for i, t, *_ in self.ariving_data:
             total_time += t
             
-        return total_time / len(self.arriving_data)
+        return total_time / len(self.ariving_data)
