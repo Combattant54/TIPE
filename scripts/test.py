@@ -1,29 +1,51 @@
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May 19 09:03:32 2026
 
-COLORS = ["red", "green", "b", "purple", "orange", "black"]
-X, Y = [1, 1, 2, 2, 3, 3], [1, 2, 1, 2, 1, 2]
+@author: arthur.woelfel
+"""
 
-fig, axis = plt.subplots()
-axis.set_xlim(-1, 10)
-axis.set_ylim(-1, 10)
+from math import exp, cos
 
-scat = plt.scatter(X, Y, s=20, c=COLORS[:len(X)])
+import numpy as np
 
-plt.show()
+from matplotlib import pyplot as plt
 
-V = [[1, 1]] * len(X)
+delta = 1.5
 
-DT = 0.1
+radius = 0.2
 
-def update(frames):
-    for i in range(len(X)):
-        X[i] += V[i][0] * DT
-        Y[i] += V[i][1] * DT
-    scat.set_offsets(list(zip(X, Y)))
+l = 0.2
+
+def func(distance, cos_alpha):
+    return np.exp(-distance / delta) * (l + (1 - l) * (1 + cos_alpha)/2 )
+
+def stress(X, Y):
+    distance = np.sqrt(X**2 + Y**2)
     
-    return scat, 
+    cos_alpha = Y / distance
+    
+    corrected_distance = distance - radius * 2
+    
+    S = func(corrected_distance, cos_alpha)
+    S[corrected_distance < 0] = 0
+    
+    return S
 
-anim = FuncAnimation(fig=fig, func=update, frames=50, interval=DT*1000, repeat=False, blit=True)
-anim.save("test.gif")
+
+arr = np.zeros((100, 100, 2))
+img = np.zeros((100, 100))
+
+X = np.linspace(-4, 4, 100)
+Y = np.linspace(-2, 4, 100)
+
+X, Y = np.meshgrid(X, Y)
+
+img = stress(X, Y)
+
+print(np.max(img))
+
+h = plt.contourf(X, Y, img)
+plt.axis('scaled')
+plt.colorbar()
 plt.show()

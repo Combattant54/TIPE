@@ -13,6 +13,7 @@ import numpy as np
 
 POS = [[1, 4], [1.1, 4.05], [1, 0.2], [1.5, 2.5], [5, 1]]
 #POS = [[1, 1.9], [1.5, 2], [1, 0.2]]
+#POS = [[1, 4], [1.1, 4.05]]
 systems = []
 dt = 0.05
 
@@ -25,7 +26,7 @@ pos_pers = [[[], []] for i in range(len(POS))]
 
 COLORS = ["red", "green", "blue", "purple", "orange"]
 
-SIMULATION_NUMBER = 15
+SIMULATION_NUMBER = 19
 PARAMS = {"NUMBER": SIMULATION_NUMBER}
 
 DPI = 200
@@ -147,8 +148,9 @@ def display():
     
 def main():
     pass
+    print(int(12/dt))
     animation = FuncAnimation(fig=fig, func=update, frames=int(12/dt), interval = dt*1000, repeat = False, blit = True)
-    animation.save(f"../results/ANIM_SIM_{SIMULATION_NUMBER}.gif", dpi=DPI)
+    animation.save(f"./results/ANIM_SIM_{SIMULATION_NUMBER}.gif", dpi=DPI)
     
     display()
 

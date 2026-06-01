@@ -11,7 +11,7 @@ VITESSE_TYPIQUE = 1
 RADIUS = 0.2
 MASS = 80 #on suppose que la masse est cste en fn des indiv
 TAU = 0.7 # temps de relaxation indiv; pourra changer dans les modèles plus poussés
-F = 150
+F = 100
 DELTA = 0.33
 LAMBDA = 0.2
 KAPPA = 400 # : constantes du modèle de Helbing
@@ -184,15 +184,15 @@ def force_contact_j_vers_i (i,j,foule):
     
     return [-KAPPA*exp(di)*e_ij[0], -KAPPA*exp(di)*e_ij[1]]
 
-def calcul_force_tot(i,foule,personne_active,OBSTACLE):
+def calcul_force_tot(i,foule,personne_active):
     f_tot = [0,0]
     for j in range(len(foule[0])):
         if j!=i and j in personne_active:
             fsoc = f_sociale_j_vers_i(i,j,foule)
             fcont = force_contact_j_vers_i (i,j,foule)
-            f_obs = force_contact_obstacle(i, OBSTACLE, foule)
-            f_tot[0] += fsoc[0] + fcont[0]+f_obs[0]
-            f_tot[1] += fsoc[1] + fcont[1]+f_obs[1]
+            #f_obs = force_contact_obstacle(i, OBSTACLE, foule)
+            f_tot[0] += fsoc[0] + fcont[0] #+f_obs[0]
+            f_tot[1] += fsoc[1] + fcont[1] #+f_obs[1]
     return f_tot
 
 def vitesse_update(foule, dt, personnes_actives, champs_vitesses): #pfd en légende
