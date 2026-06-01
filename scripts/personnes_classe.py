@@ -3,9 +3,9 @@ from math import sqrt, cos, exp
 class Personne():
     def __init__(self, radius, center, speed=[0,0], tau=0.7, mass=80, stress=0, f_soc=150, delta=0.33, lamb=0.2, kappa=400):
         self.radius = radius
-        self.center = center
-        self.speed = speed
-        self.tau = 0.5
+        self.center = center[:]
+        self.speed = speed[:]
+        self.tau = 0.7
         self.mass = 80
         self.stress = 0
         self.f_soc = 100
@@ -38,7 +38,7 @@ class Personne():
         e_ij = self.vect_unit(pers)
         d_ij = self.distance(pers)
         
-        prod_scal = self.speed[0]*e_ij[0]+self.speed[1]*e_ij[1]
+        prod_scal = self.speed[0]*e_ij[0] + self.speed[1]*e_ij[1]
         norme = sqrt(self.speed[0]**2 + self.speed[1]**2)
         
         if norme == 0:
@@ -73,13 +73,11 @@ class Personne():
         a[0] += (vitesse_souhaitee[0] - self.speed[0]) / self.tau
         a[1] += (vitesse_souhaitee[1] - self.speed[1]) / self.tau
         
-        a = [0, 0]
-        
         a[0] += ftot[0] / self.mass
         a[1] += ftot[1] / self.mass
         
-        self.speed[0] += dt * a[0]
-        self.speed[1] += dt * a[1]
+        self.speed[0] = self.speed[0] + dt * a[0]
+        self.speed[1] = self.speed[1] + dt * a[1]
     
     def position_update(self, dt): #on fait la mm: la position à t+dt, c'est celle à t + v * dt
         self.center[0] += dt*self.speed[0]

@@ -26,7 +26,7 @@ pos_pers = [[[], []] for i in range(len(POS))]
 
 COLORS = ["red", "green", "blue", "purple", "orange"]
 
-SIMULATION_NUMBER = 15
+SIMULATION_NUMBER = 19
 PARAMS = {"NUMBER": SIMULATION_NUMBER}
 
 DPI = 200
@@ -150,7 +150,7 @@ def main():
     pass
     print(int(12/dt))
     animation = FuncAnimation(fig=fig, func=update, frames=int(12/dt), interval = dt*1000, repeat = False, blit = True)
-    animation.save(f"../results/ANIM_SIM_{SIMULATION_NUMBER}.gif", dpi=DPI)
+    animation.save(f"./results/ANIM_SIM_{SIMULATION_NUMBER}.gif", dpi=DPI)
     
     display()
 

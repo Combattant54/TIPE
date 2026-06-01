@@ -6,9 +6,12 @@ from personnes_classe import Personne
 
 import time
 
+def strip_vec(vect, dec=2):
+    return "[" + ", ".join([f"{coord:0.{dec}f}" for coord in vect])+ "]"
 
 class Simulation():
-    def __init__(self, objectifs, rect_obstacles, taille, resolution=5, vitesse_typique=1.3, radius=0.2, margin_fraction=1):
+    LOG_FILE = ".\\logs\\env_class_logs.txt"
+    def __init__(self, objectifs, rect_obstacles, taille, sim_id, resolution=5, vitesse_typique=1.3, radius=0.2, margin_fraction=1):
         self.resolution = resolution
         self.taille = taille
         self.vitesse_typique = vitesse_typique
@@ -19,18 +22,23 @@ class Simulation():
         self.round_obstacles = []
         self.taille_int = [int(self.taille[0] * self.resolution) + 1, int(self.taille[1] * self.resolution) + 1]
         self.foule: list[Personne] = []
+        self.sim_time = 0
+        self.sim_id = sim_id
+        self.iterations = 0
+        
+        with open(Simulation.LOG_FILE, "w") as f:
+            f.write("BEGINING SIMULATION {}".format(self.sim_id))
         
         
-        print(self.rect_obstacles)
-        print(self.objectifs)
+        self.log(self.rect_obstacles)
+        self.log(self.objectifs)
         self.champ_vitesses = self.construire_champ_vitesse()
         
         c = self.position_reelle_en_coordonees([6-0.3, 2])
-        print(self.champ_vitesses[c[0]][c[1]])
-        print(self.calcul_vitesse_souhaitee([6-0.3, 2]))
         
         self.ariving_data = []
-        self.time = 0
+        
+        
     
     def init_foule(self, foule: list[Personne]):
         self.foule = foule.copy()
@@ -45,10 +53,10 @@ class Simulation():
         for bg, hd in self.objectifs:
             xy, width, height = bg, hd[0] - bg[0], hd[1] - bg[1]
             r = Rectangle(xy, width, height, color=objectif_color, fill=True)
-            print(f"Green : {xy} - {width} - {height}")
+            self.log(f"Green : {xy} - {width} - {height}")
             rects.append(r)
         
-        print(str(len(rects)) + " built rectangles")
+        self.log(str(len(rects)) + " built rectangles")
         
         return rects
     
@@ -87,7 +95,7 @@ class Simulation():
                 L.append([0, 0])
             champ.append(L)
         
-        print("[CHAMP VITESSE]:champs initialisé")
+        self.log("[CHAMP VITESSE]:champs initialisé")
         file = deque()
         obstacles_set = set()
         objectif_set = set()
@@ -102,7 +110,7 @@ class Simulation():
                     file.append((x_int, y_int))
                     done_dict[(x_int, y_int)] = 0
         
-        print("[CHAMP VITESSE]:objectifs et obstacles définies")
+        self.log("[CHAMP VITESSE]:objectifs et obstacles définies")
         
         while len(file) > 0:
             el = file.popleft()
@@ -128,7 +136,7 @@ class Simulation():
                     if not self.is_obstacle(self.coord_en_relle(cel)):
                         file.append(cel)
 
-        print("[CHAMP VITESSE]:début vitesse dans les obstacles")
+        self.log("[CHAMP VITESSE]:début vitesse dans les obstacles")
         obs_done_dict = {}
         for obs in obstacles_set:
             if obs in done_dict:
@@ -162,7 +170,7 @@ class Simulation():
         
         t1 = time.time()
         
-        print("[CHAMP VITESSE]:champ terminé en {}s".format(t1 - t0))
+        self.log("[CHAMP VITESSE]:champ terminé en {}s".format(t1 - t0))
         
         return champ
     
@@ -206,7 +214,7 @@ class Simulation():
             
             return sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
         except Exception as e:
-            print(i, len(self.foule))
+            self.log(i, len(self.foule))
             raise e
     
     def inter_perdestrian_distance_metric(self):
@@ -227,15 +235,16 @@ class Simulation():
                     f_con = self.foule[i].force_contact_de_pers(self.foule[j])
                     
                     if(f_con == [0, 0]):
-                        print("[00]")
+                        #self.log("{} - [00]")
+                        pass
                     
                     #f_con = [0, 0]
-                    f_soc = [0, 0]
+                    #f_soc = [0, 0]
                     
                     c_i = self.foule[i].center
                     c_j = self.foule[j].center
-                    print(c_i, c_j, f_con)
-                    print(((c_j[0] - c_i[0])**2 + (c_j[1] - c_i[1])**2)**1/2)
+                    #self.log(f"{i}, c_i: {c_i} - {j}, c_j: {c_j}, f_con: {f_con}")
+                    #self.log(f"d: {((c_j[0] - c_i[0])**2 + (c_j[1] - c_i[1])**2)**(1/2)}")
                     
                     f[0] = f[0] + f_soc[0] + f_con[0]
                     f[1] = f[1] + f_soc[1] + f_con[1]
@@ -244,23 +253,31 @@ class Simulation():
         return F
     
     def perform_time_step(self, dt):
+        self.iterations += 1
+        #self.log("", "Start of iteration " + str(self.iterations))
+        
         F = self.calcul_force_tot()
-        self.time = self.time + dt
+        self.sim_time = self.sim_time + dt
         
         for i in self.personnes_actives:
-            self.foule[i].vitesse_update(F[i], dt, self.calcul_vitesse_souhaitee(self.foule[i].center))
+            vi_souhaitee = self.calcul_vitesse_souhaitee(self.foule[i].center)
+            s = f"{i} - F: {strip_vec(F[i])} - vi_sou: {strip_vec(vi_souhaitee)}"
+            self.foule[i].vitesse_update(F[i], dt, vi_souhaitee)
             self.foule[i].position_update(dt)
+            s = s + f" - dt: {dt} - center: {strip_vec(self.foule[i].center)} - vi_act: {strip_vec(self.foule[i].speed)}"
+            self.log(s)
+
         
         desactivation = []
         for i in self.personnes_actives:
             if self.objectif_atteint(self.foule[i].center, marge = True):
                 desactivation.append(i)
         for i in desactivation:
-            
+            self.log(f"{i} - DESACTIVATION")
             self.personnes_actives.discard(i)
-            self.ariving_data.append((i, self.time, self.foule[i]))
-            print(f"[DESACTIVATION]: personne {i} désactivée, il reste {len(self.personnes_actives)} p.actives")
-            print(f"[DESACTIVATION]: ariving data updated to {len(self.ariving_data)}")
+            self.ariving_data.append((i, self.sim_time, self.foule[i]))
+            self.log(f"[DESACTIVATION]: personne {i} désactivée, il reste {len(self.personnes_actives)} p.actives")
+            self.log(f"[DESACTIVATION]: ariving data updated to {len(self.ariving_data)}")
     
     def calcul_vitesse_souhaitee(self, pos):
         """
@@ -343,3 +360,7 @@ class Simulation():
             total_time += t
             
         return total_time / len(self.ariving_data)
+    
+    def log(self, *strings):
+        with open(self.LOG_FILE, "a") as f:
+            f.writelines(["{:.3f} - {} - {}\n".format(self.sim_time, self.iterations, str(s)) for s in strings])

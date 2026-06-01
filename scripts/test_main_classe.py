@@ -8,8 +8,8 @@ from personnes_classe import Personne
 import time
 
 
-#POS = [[1, 4], [1.1, 4.05], [1, 0.2], [1.5, 2.5], [5, 1]]
-POS = [[1, 4], [1, 4.1]]
+POS = [[1, 4], [1.1, 4.05], [1, 0.2], [1.5, 2.5], [5, 1]]
+#POS = [[1, 4], [1, 4.1]]
 OBJECTIFS = [[[9, 4], [10, 6]]] 
 OBSTACLE_RECTS = [[[6, -1], [7, 5]], [[6, 6],[7, 11]]]
 RADIUS = 0.2
@@ -83,7 +83,7 @@ def display(P):
     
 
 def main():
-    sim = Simulation(objectifs=OBJECTIFS, rect_obstacles=OBSTACLE_RECTS, taille=[10, 10], radius = RADIUS)
+    sim = Simulation(objectifs=OBJECTIFS, sim_id=20, rect_obstacles=OBSTACLE_RECTS, taille=[10, 10], radius = RADIUS)
     sim.init_foule(build_foule([RADIUS] * len(POS), POS))
     
     steps = 0
@@ -93,7 +93,7 @@ def main():
     for pers in sim.foule:
         P.append([[], []])
     
-    while (not sim.is_finished()) and (steps < 3/dt):
+    while (not sim.is_finished()) and (steps < 20/dt):
         steps += 1
         sim.perform_time_step(dt)
         
@@ -104,8 +104,8 @@ def main():
         
     t1 = time.time()
     
-    print("Simulation completed in {}s for {} steps".format(t1 - t0, steps))
-    print("Computing a step in {}s or {} steps per second".format((t1 - t0)/steps, int(steps/(t1 - t0))))
+    sim.log("Simulation completed in {:.2f}s for {} steps".format(t1 - t0, steps))
+    sim.log("Computing a step in {:.1f}ms or {} steps per second".format((t1 - t0)*1000/steps, int(steps/(t1 - t0))))
     
     display(P)
     
@@ -113,13 +113,13 @@ def main():
         first = sim.first_evacuation()
         last = sim.last_evacuation()
         mean = sim.mean_evacuation()
-        print("first: {}, last: {}, mean: {}".format(first, last, mean))
+        sim.log("first: {:.2f}, last: {:.2f}, mean: {:.2f}".format(first, last, mean))
     except Exception as e:
-        print(e)
-        print("not finished")
-        print(len(sim.ariving_data))
-        print(sim.ariving_data)
-        print(sim.foule)
+        sim.log(e)
+        sim.log("not finished")
+        sim.log(len(sim.ariving_data))
+        sim.log(sim.ariving_data)
+        sim.log(sim.foule)
     
 
 
