@@ -1,17 +1,50 @@
-from math import sqrt, cos, exp
+from math import sqrt, cos, exp, tanh
+
+
+base_speed_factor = 1
+max_speed_increase = 0.75
+stress_modulation = 8
+
+def speed_increase(stress):
+    return base_speed_factor + max_speed_increase * tanh(stress / stress_modulation)
+    
+def social_decrease(stress):
+    return 1 - 0.5 * tanh(stress / stress_modulation)
 
 class Personne():
-    def __init__(self, radius, center, speed=[0,0], tau=0.7, mass=80, stress=0, f_soc=150, delta=0.33, lamb=0.2, kappa=400):
+    def __init__(self, radius, center, speed=[0,0], tau=0.7, mass=80, stress=0, f_soc=150, delta=0.33, lamb=0.2, kappa=800):
         self.radius = radius
-        self.center = center[:]
-        self.speed = speed[:]
-        self.tau = 0.7
-        self.mass = 80
+        self.center = list(center)
+        self.speed = list(speed)
+        self.tau = tau
+        self.mass = mass
+        self.stress_increase_factor = stress
+        self.f_soc = f_soc
+        self.delta = delta
+        self.lamb = lamb
+        self.kappa = kappa
+        
         self.stress = 0
-        self.f_soc = 100
-        self.delta = 0.33
-        self.lamb = 0.2
-        self.kappa = 400
+        self.stress_influence = 0
+        self.stress_relaxation = 0.25
+    
+    def func(self, distance, cos_alpha):
+        delta = 2
+        return 0.02*exp(-distance / delta) * (self.lamb + (1 - self.lamb) * (1 + cos_alpha)/2 )
+
+    def add_stress_influence(self, pers):
+        distance = sqrt((self.center[0] - pers.center[0])**2 + (self.center[1] - pers.center[1])**2)
+        
+        ps = self.center[0] * pers.center[0] + self.center[1] * pers.center[1]
+        
+        cos_alpha = ps / distance
+        
+        corrected_distance = distance - self.radius * 2
+        
+        s = self.func(corrected_distance, cos_alpha)
+        
+        self.stress_influence += self.stress_increase_factor * s
+        
     
     def distance (self, pers): #fonction dist min entre 2 individus
         if pers is self:
@@ -34,6 +67,11 @@ class Personne():
         
         return [e0,e1]
     
+    def update_stress(self, dt):
+        self.stress = (self.stress + self.stress_influence * dt ) * (1 - self.stress_relaxation * dt)
+        self.stress_influence = 0
+        
+    
     def f_sociale_de_pers(self, pers):
         e_ij = self.vect_unit(pers)
         d_ij = self.distance(pers)
@@ -47,7 +85,7 @@ class Personne():
             cos_alpha = prod_scal / norme
         #on calcule le cos de l'angle entre la vitesse et e_ij (alpha)
         
-        f = -1*self.f_soc*exp(-d_ij/self.delta)*(self.lamb +(1-self.lamb)*(1+cos_alpha)/2)
+        f = -1*self.f_soc*social_decrease(self.stress)*exp(-d_ij/self.delta)*(self.lamb +(1-self.lamb)*(1+cos_alpha)/2)
         return [f*e_ij[0],f*e_ij[1]]
     
     
@@ -70,8 +108,8 @@ class Personne():
             # -> si jamais ya besoin d'autres forces sociales
         
         a = [0, 0]
-        a[0] += (vitesse_souhaitee[0] - self.speed[0]) / self.tau
-        a[1] += (vitesse_souhaitee[1] - self.speed[1]) / self.tau
+        a[0] += (speed_increase(self.stress)*vitesse_souhaitee[0] - self.speed[0]) / self.tau
+        a[1] += (speed_increase(self.stress)*vitesse_souhaitee[1] - self.speed[1]) / self.tau
         
         a[0] += ftot[0] / self.mass
         a[1] += ftot[1] / self.mass

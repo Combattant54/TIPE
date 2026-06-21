@@ -4,14 +4,16 @@ from matplotlib.patches import Rectangle, Circle
 from collections import deque
 from personnes_classe import Personne
 
+import matplotlib.pyplot as plt
+
 import time
 
 def strip_vec(vect, dec=2):
     return "[" + ", ".join([f"{coord:0.{dec}f}" for coord in vect])+ "]"
 
 class Simulation():
-    LOG_FILE = ".\\logs\\env_class_logs.txt"
-    def __init__(self, objectifs, rect_obstacles, taille, sim_id, resolution=5, vitesse_typique=1.3, radius=0.2, margin_fraction=1):
+    LOG_FILE = "..\\logs\\env_sim_{}_logs.txt"
+    def __init__(self, objectifs, rect_obstacles, taille, sim_id, resolution=5, vitesse_typique=1, radius=0.2, margin_fraction=1):
         self.resolution = resolution
         self.taille = taille
         self.vitesse_typique = vitesse_typique
@@ -26,15 +28,18 @@ class Simulation():
         self.sim_id = sim_id
         self.iterations = 0
         
-        with open(Simulation.LOG_FILE, "w") as f:
-            f.write("BEGINING SIMULATION {}".format(self.sim_id))
+        self.stress_data = []
+        self.time_data = []
+        
+        self.log_file = self.LOG_FILE.format(int(self.sim_id))
+        
+        with open(self.log_file, "w") as f:
+            f.write("BEGINING SIMULATION {} \n".format(self.sim_id))
         
         
         self.log(self.rect_obstacles)
         self.log(self.objectifs)
         self.champ_vitesses = self.construire_champ_vitesse()
-        
-        c = self.position_reelle_en_coordonees([6-0.3, 2])
         
         self.ariving_data = []
         
@@ -224,7 +229,27 @@ class Simulation():
                 if j < i:
                     I += self.calcul_distance(i, j)
         return I
-
+    
+    def log_stress_repartition(self):
+        s = 0
+        for i in self.personnes_actives:
+            s += self.foule[i].stress
+        
+        self.stress_data.append( s / len(self.personnes_actives) )
+            
+    def log_metrics(self):
+        self.log_stress_repartition()
+        self.time_data.append(self.sim_time)
+    
+    def display_stress(self):
+        fig = plt.figure()
+        plt.plot(self.time_data, self.stress_data)
+        plt.title("Stress evolution in " + str(self.sim_id))
+        plt.show()
+        plt.close()
+        
+    
+    
     def calcul_force_tot(self):
         F = {i:0 for i in range(len(self.foule))}
         for i in self.personnes_actives:
@@ -233,6 +258,8 @@ class Simulation():
                 if j != i:
                     f_soc = self.foule[i].f_sociale_de_pers(self.foule[j])
                     f_con = self.foule[i].force_contact_de_pers(self.foule[j])
+                    self.foule[i].add_stress_influence(self.foule[j])
+                    
                     
                     if(f_con == [0, 0]):
                         #self.log("{} - [00]")
@@ -241,8 +268,8 @@ class Simulation():
                     #f_con = [0, 0]
                     #f_soc = [0, 0]
                     
-                    c_i = self.foule[i].center
-                    c_j = self.foule[j].center
+                    #c_i = self.foule[i].center
+                    #c_j = self.foule[j].center
                     #self.log(f"{i}, c_i: {c_i} - {j}, c_j: {c_j}, f_con: {f_con}")
                     #self.log(f"d: {((c_j[0] - c_i[0])**2 + (c_j[1] - c_i[1])**2)**(1/2)}")
                     
@@ -262,11 +289,13 @@ class Simulation():
         for i in self.personnes_actives:
             vi_souhaitee = self.calcul_vitesse_souhaitee(self.foule[i].center)
             s = f"{i} - F: {strip_vec(F[i])} - vi_sou: {strip_vec(vi_souhaitee)}"
+            self.foule[i].update_stress(dt)
             self.foule[i].vitesse_update(F[i], dt, vi_souhaitee)
             self.foule[i].position_update(dt)
             s = s + f" - dt: {dt} - center: {strip_vec(self.foule[i].center)} - vi_act: {strip_vec(self.foule[i].speed)}"
             self.log(s)
-
+        
+        self.log_metrics()
         
         desactivation = []
         for i in self.personnes_actives:
@@ -362,5 +391,5 @@ class Simulation():
         return total_time / len(self.ariving_data)
     
     def log(self, *strings):
-        with open(self.LOG_FILE, "a") as f:
+        with open(self.log_file, "a") as f:
             f.writelines(["{:.3f} - {} - {}\n".format(self.sim_time, self.iterations, str(s)) for s in strings])
